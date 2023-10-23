@@ -43,11 +43,8 @@ class LogisticRegressionClassifier():
         cost = 0
         grad = np.zeros(w.shape)
         ### YOUR CODE HERE
-        grad = - 1/len(y) * logistic( np.dot(X, w)*-y )*y@X
-        for i in range(len(X)):
-            cost += np.log(1+np.exp(np.dot(X[i],w.T)*-y[i]))
-        cost /= len(y)  
-        perm = np.random.permutation(len(y))
+        grad = - 1/len(y) * np.matmul(logistic(- np.dot(X, w)* y) *y, X)
+        cost = 1/len(y) * np.sum(np.log(1 + np.exp(- np.dot(X, w) * y)))
         
         ### END CODE
         assert grad.shape == w.shape
@@ -55,42 +52,22 @@ class LogisticRegressionClassifier():
 
 
     def fit(self, X, y, w=None, lr=0.1, batch_size=16, epochs=10):
-        """
-        Run mini-batch stochastic Gradient Descent for logistic regression 
-        use batch_size data points to compute gradient in each step.
-    
-        The function np.random.permutation may prove useful for shuffling the data before each epoch
-        It is wise to print the performance of your algorithm at least after every epoch to see if progress is being made.
-        Remember the stochastic nature of the algorithm may give fluctuations in the cost as iterations increase.
-
-        Args:
-           X: np.array shape (n,d) dtype float32 - Features 
-           y: np.array shape (n,) dtype int32 - Labels 
-           w: np.array shape (d,) dtype float32 - Initial parameter vector
-           lr: scalar - learning rate for gradient descent
-           batch_size: number of elements to use in minibatch
-           epochs: Number of scans through the data
-
-        sets: 
-           w: numpy array shape (d,) learned weight vector w
-           history: list/np.array len epochs - value of loss function (in-sample error) after every epoch. Used for plotting
-        """
         if w is None: w = np.zeros(X.shape[1])
         history = []        
         ### YOUR CODE HERE 
         for i in range(epochs):
             perm = np.random.permutation(len(y))
-            X_new = X[perm]
-            y_new = y[perm]
-            print("hi")
+            X = X[perm]
+            y = y[perm]
             for j in range(0, len(y), batch_size):
-                X_b = X_new[j:j+batch_size]
-                y_b = y_new[j:j+batch_size]
-                print("bye", batch_size, j)
+                X_b = X[j:j+batch_size]
+                y_b = y[j:j+batch_size]
+                #Getting gradient
                 cost, grad = self.cost_grad(X_b, y_b, w)
-                history.append(cost)
-                # update weights
-                w = w - lr*grad            
+                w = w - lr*grad
+            #Getting cost
+            cost, grad = self.cost_grad(X, y, w)    
+            history.append(cost)           
         ### END CODE
         self.w = w
         self.history = history
@@ -131,8 +108,8 @@ class LogisticRegressionClassifier():
         """
         s = 0
         ### YOUR CODE HERE
-        s = np.sum(self.predict(X) == y)/len(y)
-        print(s)
+        correct_pred  = np.sum(self.predict(X) == y)
+        s = correct_pred/len(y)
         ### END CODE
         return s
         

@@ -23,11 +23,11 @@ def softmax(X):
         res: numpy array shape (n, d)  where each row is the softmax transformation of the corresponding row in X i.e res[i, :] = softmax(X[i, :])
     """
     res = np.zeros(X.shape)
-    x_max = np.amax(X,axis=1,keepdims=True)
-    logsum = (np.log(np.sum(np.exp(X-x_max),axis=1,keepdims=True))+x_max)
+    x_max = np.amax(X,keepdims=True, axis=1)
+    logsum = (np.log(np.sum(np.exp(X-x_max), keepdims=True, axis=1))+x_max)
     res = X-logsum
-    res = np.exp(res)
-    return res
+
+    return np.exp(res)
 
 def one_in_k_encoding(vec, k):
     """ One-in-k encoding of vector to k classes 
@@ -48,61 +48,35 @@ class SoftmaxClassifier():
         self.W = None
         
     def cost_grad(self, X, y, W):
-        """ 
-        Compute the average negative log likelihood cost and the gradient under the softmax model 
-        using data X, Y and weight matrix W.
         
-        the functions np.log, np.nonzero, np.sum, np.dot (@), may come in handy
-        Args:
-           X: numpy array shape (n, d) float - the data each row is a data point
-           y: numpy array shape (n, ) int - target values in 0,1,...,k-1
-           W: numpy array shape (d x K) float - weight matrix
-        Returns:
-            totalcost: Average Negative Log Likelihood of w 
-            gradient: The gradient of the average Negative Log Likelihood at w 
-        """
         cost = np.nan
         grad = np.zeros(W.shape)*np.nan
         Yk = one_in_k_encoding(y, self.num_classes) # may help - otherwise you may remove it
         ### YOUR CODE HERE
-        cost = -1/len(y) * np.sum(Yk * np.log(softmax(np.dot(X,W))))
-        grad = (-(1/len(y))*np.dot(X.T,(Yk-softmax(np.dot(X,W)))))
+        cost = -1/len(y) * np.sum(Yk * np.log(softmax(np.dot(X,W)))) #ndk
+        grad = -1/len(y) * np.dot(X.T,(Yk-softmax(np.dot(X,W))))  #ndk
         ### END CODE
         return cost, grad
 
 
     def fit(self, X, Y, W=None, lr=0.01, epochs=10, batch_size=16):
-        """
-        Run Mini-Batch Gradient Descent on data X,Y to minimize the in sample error (1/n)NLL for softmax regression.
-        Printing the performance every epoch is a good idea to see if the algorithm is working
-    
-        Args:
-           X: numpy array shape (n, d) - the data each row is a data point
-           Y: numpy array shape (n,) int - target labels numbers in {0, 1,..., k-1}
-           W: numpy array shape (d x K)
-           lr: scalar - initial learning rate
-           batchsize: scalar - size of mini-batch
-           epochs: scalar - number of iterations through the data to use
-
-        Sets: 
-           W: numpy array shape (d, K) learned weight vector matrix  W
-           history: list/np.array len epochs - value of cost function after every epoch. You know for plotting
-        """
+        
         if W is None: W = np.zeros((X.shape[1], self.num_classes))
         history = []
         ### YOUR CODE HERE
         for i in range(epochs):
             perm = np.random.permutation(len(Y))
-            X_new = X[perm]
-            y_new = Y[perm]
+            X = X[perm]
+            Y = Y[perm]
            
             for j in range(0, len(Y), batch_size):
-                X_b = X_new[j:j+batch_size]
-                y_b = y_new[j:j+batch_size]
-                cost, grad = self.cost_grad(X_b, y_b, W)
-                history.append(cost)
-                # update weights
-                W = W - lr*grad          
+                X_b = X[j:j+batch_size]
+                Y_b = Y[j:j+batch_size]
+                cost, grad = self.cost_grad(X_b, Y_b, W)
+            
+                W = W - lr*grad
+            cost, grad = self.cost_grad(X, Y, W)    
+            history.append(cost)          
         ### END CODE
         self.W = W
         self.history = history
@@ -119,7 +93,7 @@ class SoftmaxClassifier():
         """
         out = 0
         ### YOUR CODE HERE
-        out = (self.predict(X)==Y).mean()
+        out = (self.predict(X) == Y).mean()
         ### END CODE
         return out
 
@@ -133,7 +107,7 @@ class SoftmaxClassifier():
         """
         out = None
         ### YOUR CODE HERE   
-        out = np.argmax(np.dot(X, self.W),axis=1)
+        out = np.argmax(np.dot(X, self.W) , axis=1)
         ### END CODE
         return out
 
